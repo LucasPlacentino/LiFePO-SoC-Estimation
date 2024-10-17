@@ -1,6 +1,23 @@
 # Team7 - Huawei 2024 Nuremberg Tech Arena
 Lithium-Ion Battery State of Charge Challenge  
 
+Data from LiFePO4 Battery:
+- capacity: 280Ah
+- charge upper limit voltage: 3.65V
+-  discharge lower threshold voltage: 2.5V
+-  rated voltage: 3.2V
+-  current rate range: 0~1C
+-  rated current rate: 0.2C
+
+data format: steps of 1 second
+
+Criteria:
+1. Accuracy: Maximum Absolute Error (MaxAE) measures the largest deviation between estimated and actual SoC values, assessing worst-case scenarios.
+2. Robustness: Evaluates the algorithm's stability and accuracy across different conditions.
+3. Efficiency: Assesses execution time, memory usage, and consistency across a uniform testing environment.
+4. Transient Convergence: Measures the algorithm’s ability to quickly correct incorrect initial SoC values.
+5. Documentation: Evaluates clarity, organization, and code quality.
+
 Need good/high/best efficiency (good for embedded use) -> **avoid** neural networks, use system that can easily be made into an FPGA or ASIC, integratable into a BMS  
 We'll use an empirical model (along with an electrical model ?) -> provided by the challenge  
 1. (off-line) _OCV_-SOC relationship is predetermined  -> stored in lookup table or fitted by a math func
@@ -23,3 +40,6 @@ Assume that the open circuit voltage is error-free.
 Provided OCV-SOC relationship (100 datapoints x2: charge and discharge):  
 ![OCV-SOC_curve](https://github.com/user-attachments/assets/2c669ff4-10a9-4ecb-ac1b-cce6085051ea)
 
+
+----------------------
+HPPC (Hybrid pulse power characterization) charging and discharging tests ? 
