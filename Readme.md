@@ -9,7 +9,7 @@ We'll use an empirical model (along with an electrical model ?) -> provided by t
 > Wei, J., Dong, G., & Chen, Z. (2017). On-board adaptive model for state of charge estimation of lithium-ion batteries based on Kalman filter with proportional integral-based error adjustment. Journal of Power Sources, 365, 308-319.  
 
 - Ampere hours integral (AHI) -> needs open circuit voltage (_OCV_)  
-- Kalman filter (regular, (adaptive?) extended, (adaptive?) unscented, sigma-point ?) + regulator/observer (P, PI, PD or PID ?) for error correction/adjustment -> exteded KF because non-linear  
+- Kalman filter (regular, (adaptive?) extended, (adaptive?) unscented, sigma-point, cubature ?) + regulator/observer (P, PI, PD or PID ?) for error correction/adjustment -> exteded KF because non-linear  
 > Wang, W., & Mu, J. (2019). State of charge estimation for lithium-ion battery in electric vehicle based on Kalman filter considering model error. Ieee Access, 7, 29223-29235.
 
 Assume that the open circuit voltage is error-free.  
