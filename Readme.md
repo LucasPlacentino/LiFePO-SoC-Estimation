@@ -17,6 +17,8 @@ Assume that the open circuit voltage is error-free.
 > Ahmed, M. S., Raihan, S. A., & Balasingam, B. (2020). A scaling approach for improved state of charge representation in rechargeable batteries. Applied energy, 267, 114880.
 
 
+> El Maliki, A., Benlafkih, A., Anoune, K., & Hadjoudja, A. (2024). Reduce state of charge estimation errors with an extended Kalman filter algorithm. International Journal of Electrical and Computer Engineering (IJECE), 14(1), 57-65. doi:http://doi.org/10.11591/ijece.v14i1.pp57-65
+
 ----------------------
 Provided OCV-SOC relationship (100 datapoints x2: charge and discharge):  
 ![OCV-SOC_curve](https://github.com/user-attachments/assets/2c669ff4-10a9-4ecb-ac1b-cce6085051ea)
