@@ -2,11 +2,19 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+def read_excel_data(filename: str, **kwargs) -> pd.DataFrame:
+    # read data from xlsx file
+    data = pd.read_excel(filename, **kwargs)
+    return data
+
 # Chargement des données pour les jours 1 à 4 et 4 à 7
 data_days1_4 = pd.read_csv("data_days1_4.csv", sep=';', header=None)
 data_days4_7 = pd.read_csv("data_days4_7.csv", sep=';', header=None)
 data_ocv_charge = pd.read_csv("charging_OCV_curve.csv", sep=';', header=None)
 data_ocv_discharge = pd.read_csv("discharging_OCV_curve.csv", sep=';', header=None)
+
+# il faut faire:
+data = read_excel_data("data.xlsx") # ou juste pd.read_excel("data.xlsx")
 
 # Renommer les colonnes pour une meilleure lisibilité
 data_days1_4.columns = ['voltage', 'current_inv', 'SOC_truc', 'temperature']
