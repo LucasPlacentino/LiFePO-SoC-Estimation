@@ -2,29 +2,46 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-def read_excel_data(filename: str, **kwargs) -> pd.DataFrame:
-    # read data from xlsx file
-    data = pd.read_excel(filename, **kwargs)
-    return data
+#data_ocv_charge = pd.read_csv("charging_OCV_curve.csv", sep=';', header=None)
+#data_ocv_charge = pd.read_excel("charging_OCV_curve.xlsx", header=None) # voir les trucs à rajouter en arg de read_excel
 
-# Chargement des données pour les jours 1 à 4 et 4 à 7
-data_days1_4 = pd.read_csv("data_days1_4.csv", sep=';', header=None)
-data_days4_7 = pd.read_csv("data_days4_7.csv", sep=';', header=None)
-data_ocv_charge = pd.read_csv("charging_OCV_curve.csv", sep=';', header=None)
-data_ocv_discharge = pd.read_csv("discharging_OCV_curve.csv", sep=';', header=None)
+#data_ocv_discharge = pd.read_csv("discharging_OCV_curve.csv", sep=';', header=None)
+#data_ocv_discharge = pd.read_excel("discharging_OCV_curve.xlsx", header=None) # voir les trucs à rajouter en arg de read_excel
 
-# il faut faire:
-data = read_excel_data("data.xlsx") # ou juste pd.read_excel("data.xlsx")
+# Dataset files are in "./data/Scenario-{nb}/{filename}.xlsx"
+# the directory "./data/" is in the gitignore to prevent uploading the confidential dataset to the repo
+files = [
+    "Scenario-1/GenerateTestData_S1_Day0to4.xlsx",
+    "Scenario-1/GenerateTestData_S1_Day4to7.xlsx",
+    "Scenario-2/GenerateTestData_S2_Day0to4.xlsx",
+    "Scenario-2/GenerateTestData_S2_Day4to7.xlsx",
+    "Scenario-3/GenerateTestData_S3_Day0to4.xlsx",
+    "Scenario-3/GenerateTestData_S3_Day4to7.xlsx",
+    "Scenario-4/GenerateTestData_S4_Day0to4.xlsx",
+    "Scenario-4/GenerateTestData_S4_Day4to7.xlsx"
+]
+# add additional files to the list here above
+
+for i in range(len(files)):
+    print(f"{i}. {files[i]}")
+data_choice: int = int(input(f"Select data file: "))
+
+print("Reading data from file:", files[data_choice],"...")
+# read file with these (hardcoded) specific columns placement and headers:
+data = pd.read_excel("data/"+files[int(data_choice)], usecols="B:D,G", skiprows=[0,3],header=1) # read file situated in ./data/Scenario-{nb}/{filename}.xlsx
+print(data.head()) # look the first few lines of the dataframe to manually verify the data has been read correctly
+input("Press Enter to continue...")
+
+# Dataframe has columns: "Voltage", "Current_inv", "SOC_true", and "Temp"
+
 
 # Renommer les colonnes pour une meilleure lisibilité
-data_days1_4.columns = ['voltage', 'current_inv', 'SOC_truc', 'temperature']
-data_days4_7.columns = ['voltage', 'current_inv', 'SOC_truc', 'temperature']
-data_ocv_charge.columns = ['data_SOC', 'data_U']
-data_ocv_discharge.columns = ['data_SOC', 'data_U']
+#data_ocv_charge.columns = ['data_SOC', 'data_U']
+#data_ocv_discharge.columns = ['data_SOC', 'data_U']
 
 
-# Concaténer les deux fichiers
-data = pd.concat([data_days1_4, data_days4_7], ignore_index=True)
+# Concaténer les deux fichiers #! Ne pas concaténer, on fait fichier par fichier
+#data = pd.concat([data_days1_4, data_days4_7], ignore_index=True)
 
 #print("Colonnes de data_ocv_charge:", data_ocv_charge.columns)
 #print("Colonnes de data_ocv_discharge:", data_ocv_discharge.columns)
