@@ -67,19 +67,16 @@ Papers:
 
 
 ## Results
-The project implemented an EKF-based SoC estimation algorithm, ...  
 
-MaxAE (Maximum Absolute Error): 0.05
-RMSE (Root Mean Square Error): 0.02
-
-
+Error: 2.9691746014870755%
 
 ![SoC Estimation Plot](Figure_2.png)
 
 ## Improvements
 
 ### Fixes:
-- **Algorithm**: there's some issue with the algorithm that needs to be fixed during the next phase in order to get a lower MaxAE and lower RMSE.  
+- **Algorithm**: there's some issue with the algorithm that needs to be fixed during the next phase in order to get a lower error.  
+- **Battery Caracteristics**: the battery characteristics are defined as constants as it was considered as a sufficient simplification. It would be interesting to consider them as variables.
 
 ### Enhancements:
 - **Modeling**: Implement a more accurate battery model to improve the estimation accuracy.  
