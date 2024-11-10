@@ -73,11 +73,16 @@ The project implemented an EKF-based SoC estimation algorithm, ...
 
 ![SoC Estimation Plot](Figure_1.png)
 
-## Dependencies
-Install them using:  
-```bash
-pip install -r requirements.txt
-```
+## Improvements
+
+### Fixes:
+- **Algorithm**: there's some issue with the algorithm that needs to be fixed during the next phase in order to get a lower MaxAE and lower RMSE.
+
+### Enhancements:
+- **Modeling**: Implement a more accurate battery model to improve the estimation accuracy.
+- **Optimization**: Optimize the EKF algorithm to reduce the computational complexity and improve real-time performance.
+- **Validation**: Validate the algorithm on a wider range of scenarios and battery types to ensure robustness and generalization.
+
 
 ## Acknowledgments
 We would like to thank the organizers for organizing this challenge/hackathon.
