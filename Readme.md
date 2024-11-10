@@ -51,10 +51,12 @@ data_ocv_discharge (head):
 Select data file: 
 ```
 
-Input a number between 0 and 7, it will then give the plot and results after the computation.
+Input a number between 0 and 7, it will then give the plot and results after the computation.  
 
 ## Extended Kalman Filter (EKF) Approach
-We use an EKF algorithm to estimate the SoC by linearizing the non-linear state and measurement equations around the current estimate. This method involves computing Jacobians for both the state transition and the measurement model.
+We use an EKF algorithm to estimate the SoC by linearizing the non-linear state and measurement equations around the current estimate. This method involves computing Jacobians for both the state transition and the measurement model.  
+
+We prefered the EKF over other types of algorithm like neural networks because it is more suitable for embedded systems and can be easily implemented in a BMS (incorporated in an FPGA or even an ASIC). The EKF is also more efficient and requires less computational resources compared to neural networks.  
 
 ### Inspirations:
 Papers:
@@ -76,20 +78,20 @@ The project implemented an EKF-based SoC estimation algorithm, ...
 ## Improvements
 
 ### Fixes:
-- **Algorithm**: there's some issue with the algorithm that needs to be fixed during the next phase in order to get a lower MaxAE and lower RMSE.
+- **Algorithm**: there's some issue with the algorithm that needs to be fixed during the next phase in order to get a lower MaxAE and lower RMSE.  
 
 ### Enhancements:
-- **Modeling**: Implement a more accurate battery model to improve the estimation accuracy.
-- **Optimization**: Optimize the EKF algorithm to reduce the computational complexity and improve real-time performance.
-- **Validation**: Validate the algorithm on a wider range of scenarios and battery types to ensure robustness and generalization.
+- **Modeling**: Implement a more accurate battery model to improve the estimation accuracy.  
+- **Optimization**: Optimize the EKF algorithm to reduce the computational complexity and improve real-time performance.  
+- **Validation**: Validate the algorithm on a wider range of scenarios and battery types to ensure robustness and generalization.  
 
 
 ## Acknowledgments
-We would like to thank the organizers for organizing this challenge/hackathon.
+We would like to thank the organizers for hosting this challenge/hackathon, which enabled us to learn many new concepts and develop new skills.  
 
 ## Team 7 Members
-- **Chloé Blommaert**
-- **Numa Deville**
-- **Lucas Placentino**
+- **Chloé Blommaert**  
+- **Numa Deville**  
+- **Lucas Placentino**  
 
 > _All rights reserved._
