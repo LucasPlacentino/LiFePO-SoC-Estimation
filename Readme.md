@@ -69,11 +69,12 @@ Papers:
 ## Results
 The project implemented an EKF-based SoC estimation algorithm, ...  
 
-...  
+MaxAE (Maximum Absolute Error): 0.05
+RMSE (Root Mean Square Error): 0.02
 
 
 
-![SoC Estimation Plot](Figure_1.png)
+![SoC Estimation Plot](Figure_2.png)
 
 ## Improvements
 

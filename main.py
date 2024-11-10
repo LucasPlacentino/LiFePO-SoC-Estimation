@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import timeit
+import statistics
 
 start = timeit.default_timer()
 
@@ -133,6 +134,9 @@ num_steps = len(voltage_data)
 print(f"Steps: {num_steps}")
 SoC_values = []
 
+error =[]
+OffSet = initial_SoC
+
 for t in range(num_steps):
     current = current_data[t]
     measured_voltage = voltage_data[t]
@@ -161,18 +165,24 @@ for t in range(num_steps):
     # Calcul de l'erreur absolue maximale
     actual_soc = soc_true_data[t]
     max_ae = max(max_ae, abs(SoC_est[0, 0] - actual_soc))
+    error.append(abs(actual_soc/40 + OffSet - SoC_est[0, 0]) /SoC_est[0,0])
 print("loop done.")
 
-max_SoC_values = max(SoC_values)
-min_SoC_values = min(SoC_values)
-factor = 57
-# Affichage des résultats
+#max_SoC_values = max(SoC_values)
+#min_SoC_values = min(SoC_values)
+#factor = 57
+## Affichage des résultats
+##SoC_values += initial_SoC  # Ajouter le SoC initial
+#SoC_values = np.array(SoC_values)/factor
+##SoC_values /= max_SoC_values  # Normaliser
+##SoC_values *= 100  # Convertir en pourcentage
+#SoC_values *= -1  # Inverser pour correspondre aux données réelles
 #SoC_values += initial_SoC  # Ajouter le SoC initial
-SoC_values = np.array(SoC_values)/factor
-#SoC_values /= max_SoC_values  # Normaliser
-#SoC_values *= 100  # Convertir en pourcentage
-SoC_values *= -1  # Inverser pour correspondre aux données réelles
-SoC_values += initial_SoC  # Ajouter le SoC initial
+
+SoC_values = np.array(SoC_values)/40 + OffSet
+
+error = abs(statistics.mean(error))
+print("error", abs(1-error)*100, ' %')
 
 # error = sum((SoC_values-soc_true_data)/SoC_values)/len(SoC_values)
 #print('error : ', error*100, ' %')
@@ -183,7 +193,7 @@ SoC_values += initial_SoC  # Ajouter le SoC initial
 #print('min vrai soc', min(soc_true_data))
 
 # Affichage de l'erreur maximale
-print(f"Maximum Absolute Error (MaxAE): {max_ae/factor}")
+#print(f"Maximum Absolute Error (MaxAE): {max_ae/factor}")
 
 #print(f'Root Mean Square Error (RMSE): {np.sqrt(np.mean((np.array(SoC_values) - np.array(soc_true_data))**2))}')
 
