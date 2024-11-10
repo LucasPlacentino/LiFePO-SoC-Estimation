@@ -20,7 +20,7 @@ print("data_hppc_chg (head):")
 print(data_hppc_chg.head())
 data_hppc_dsg = pd.read_excel("data/EVE_HPPC_1_25degree_DSG-injectionTemplate.xlsx", header=3, usecols="A:D")
 data_hppc_dsg.columns = ['seconds', 'voltage', 'current_inv', 'SOC_true']
-print("data_hppc_chg (head):")
+print("data_hppc_dsg (head):")
 print(data_hppc_dsg.head())
 
 input("Press Enter to continue...")
