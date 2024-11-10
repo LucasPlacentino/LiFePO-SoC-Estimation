@@ -68,10 +68,9 @@ current_data = data['Current_inv'].values
 soc_true_data = data['SOC_true'].values
 temp_data = data['Temp'].values
 # Paramètres de la batterie
-nominal_capacity = 100.0  # Capacité nominale en Ah (ajuster en fonction de la batterie)
+nominal_capacity = 280.0  # Capacité nominale en Ah (ajuster en fonction de la batterie)
 dt = 1.0  # Pas de temps en secondes
-initial_SoC = 0.8  # SoC initial (80% de charge)
-#initial_SoC = soc_true_data[0]  # SoC initial ?
+initial_SoC = soc_true_data[0]  # SoC initial
 
 # Initialisation du filtre de Kalman
 SoC_est = np.array([[initial_SoC]])
