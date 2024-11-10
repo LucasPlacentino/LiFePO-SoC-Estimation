@@ -58,7 +58,9 @@ print("Reading data from file:", files[data_choice],"...")
 data = pd.read_excel("data/"+files[int(data_choice)], usecols="B:D,G", skiprows=[0,3],header=1) # read file situated in ./data/Scenario-{nb}/{filename}.xlsx
 data.columns = ['voltage', 'current_inv', 'SOC_true', 'temperature']
 print(data.head()) # look the first few lines of the dataframe to manually verify the data has been read correctly
-input("Run algorithm? Press Enter to continue...")
+#input("Run algorithm? Press Enter to continue...")
+
+print('Reading Excel file took ', timeit.default_timer() - start, 's')
 
 
 # Extraction des colonnes par index
@@ -82,6 +84,7 @@ initial_SoC = soc_true_data[0]  # SoC initial
 
 # Initialisation du filtre de Kalman
 SoC_est = np.array([[initial_SoC]])
+# EKF parameters :
 P = np.array([[1]])
 Q = np.array([[1e-5]])
 R = np.array([[0.1]])
@@ -119,7 +122,7 @@ max_ae = 0
 
 # Boucle de simulation
 num_steps = len(voltage_data)
-print(f"Nombre total d'étapes : {num_steps}")
+print(f"Steps: {num_steps}")
 SoC_values = []
 
 for t in range(num_steps):
@@ -128,7 +131,7 @@ for t in range(num_steps):
     #temperature = temperature_data[t]
 
     # Prédiction
-    SoC_pred = SoC_est - np.array([[current * dt / nominal_capacity]])
+    SoC_pred = SoC_est - np.array([[current * dt / (nominal_capacity)]]) # nomilal_capacity in Ah, dt in s -> *3600 to convert Ah to As
     F = jacobian_state_transition()
     P_pred = F @ P @ F.T + Q
 
@@ -140,7 +143,7 @@ for t in range(num_steps):
     H = jacobian_measurement_function()
     K = P_pred @ H.T @ np.linalg.inv(H @ P_pred @ H.T + R)
     innovation = measured_voltage - voltage_pred
-    SoC_est = SoC_pred + K @ np.array([[measured_voltage - voltage_pred]])
+    SoC_est = SoC_pred + K @ np.array([[innovation]]) # clip within 0 and 1 or 0 and 100 ?
     P = (np.eye(len(P)) - K @ H) @ P_pred
 
     # Stocker la valeur estimée de SoC
@@ -149,28 +152,34 @@ for t in range(num_steps):
     # Calcul de l'erreur absolue maximale
     actual_soc = soc_true_data[t]
     max_ae = max(max_ae, abs(SoC_est[0, 0] - actual_soc))
+print("loop done.")
 
 
 # Affichage des résultats
-
-SoC_values = [((x+soc_true_data[0])/max(SoC_values))*100 for x in SoC_values]
-soc_true_data = [x for x in soc_true_data]
+max_SoC_values = max(SoC_values)
+#SoC_values += initial_SoC  # Ajouter le SoC initial
+#SoC_values = np.array(SoC_values)/57
+##SoC_values /= max_SoC_values  # Normaliser
+##SoC_values *= 100  # Convertir en pourcentage
+#SoC_values *= -1  # Inverser pour correspondre aux données réelles
+#SoC_values += initial_SoC  # Ajouter le SoC initial
 
 # error = sum((SoC_values-soc_true_data)/SoC_values)/len(SoC_values)
 #print('error : ', error*100, ' %')
 
-print('max soc estim', max(SoC_values))
+print('max soc estim', max_SoC_values)
 print('max vrai soc', max(soc_true_data))
 
 # Affichage de l'erreur maximale
-print(f"Erreur Absolue Maximale : {max_ae}")
+print(f"Maximum Absolute Error (MaxAE): {max_ae}")
+
+#print(f'Root Mean Square Error (RMSE): {np.sqrt(np.mean((np.array(SoC_values) - np.array(soc_true_data))**2))}')
 
 stop = timeit.default_timer()
-
-print('Time: ', stop - start)
+print('Time: ', stop - start, 's')
 
 plt.plot(range(num_steps), SoC_values, label="Estimated SoC")
-plt.plot(range(num_steps), soc_true_data, label="Real SoC 2000")
+plt.plot(range(num_steps), soc_true_data, label="True SoC")
 plt.xlabel("Time (s)")
 plt.ylabel("State Of Charge (SoC)")
 plt.title("SoC estimation with an Extended Kalman filter")
