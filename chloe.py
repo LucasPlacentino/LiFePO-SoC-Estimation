@@ -23,7 +23,7 @@ data_hppc_dsg.columns = ['seconds', 'voltage', 'current_inv', 'SOC_true']
 print("data_hppc_dsg (head):")
 print(data_hppc_dsg.head())
 
-input("Press Enter to continue...")
+#input("Press Enter to continue...")
 
 # Dataset files are in "./data/Scenario-{nb}/{filename}.xlsx"
 # the directory "./data/" is in the gitignore to prevent uploading the confidential dataset to the repo
@@ -111,7 +111,7 @@ for t in range(num_steps):
     P_pred = F @ P @ F.T + Q
 
     # Tension prédite (choix entre charge/décharge selon le courant)
-    mode = "charge" if current < 0 else "discharge"
+    mode = "charge" if current > 0 else "discharge" # > rather than < ?
     voltage_pred = voltage_model(SoC_pred[0, 0], current, temperature, mode=mode)
 
     # Mise à jour (filtrage)

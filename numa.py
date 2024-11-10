@@ -20,6 +20,8 @@ print("data_ocv_discharge (head):")
 print(data_ocv_discharge.head())
 
 
+"""
+# We don't use the hppc test right now, as impedance can be (for now) estimated as a constant value (see plots)
 print("Getting data from HPPC files...")
 data_hppc_chg = pd.read_excel("data/EVE_HPPC_1_25degree_CHG-injectionTemplate.xlsx", header=3, usecols="A:D")
 data_hppc_chg.columns = ['seconds', 'voltage', 'current_inv', 'SOC_true']
@@ -29,7 +31,7 @@ data_hppc_dsg = pd.read_excel("data/EVE_HPPC_1_25degree_DSG-injectionTemplate.xl
 data_hppc_dsg.columns = ['seconds', 'voltage', 'current_inv', 'SOC_true']
 print("data_hppc_dsg (head):")
 print(data_hppc_dsg.head())
-
+"""
 
 #input("Press Enter to continue...")
 
@@ -56,7 +58,7 @@ print("Reading data from file:", files[data_choice],"...")
 data = pd.read_excel("data/"+files[int(data_choice)], usecols="B:D,G", skiprows=[0,3],header=1) # read file situated in ./data/Scenario-{nb}/{filename}.xlsx
 data.columns = ['voltage', 'current_inv', 'SOC_true', 'temperature']
 print(data.head()) # look the first few lines of the dataframe to manually verify the data has been read correctly
-input("Press Enter to continue...")
+input("Run algorithm? Press Enter to continue...")
 
 
 # Extraction des colonnes par index
@@ -86,7 +88,7 @@ R = np.array([[0.1]])
 
 
 # Modèle de tension utilisant les courbes de charge et décharge
-def voltage_model(SOC, current, temperature, mode="discharge"):
+def voltage_model(SOC, current, temperature=None, mode="discharge"):
     if mode == "charge":
         soc_ocv = soc_ocv_charge
         voltage_ocv = voltage_ocv_charge
@@ -123,7 +125,7 @@ SoC_values = []
 for t in range(num_steps):
     current = current_data[t]
     measured_voltage = voltage_data[t]
-    temperature = temperature_data[t]
+    #temperature = temperature_data[t]
 
     # Prédiction
     SoC_pred = SoC_est - np.array([[current * dt / nominal_capacity]])
@@ -132,7 +134,7 @@ for t in range(num_steps):
 
     # Tension prédite (choix entre charge/décharge selon le courant)
     mode = "charge" if current > 0 else "discharge" # > or < ?
-    voltage_pred = voltage_model(SoC_pred[0, 0], current, temperature, mode=mode)
+    voltage_pred = voltage_model(SoC_pred[0, 0], current, mode=mode)
 
     # Mise à jour (filtrage)
     H = jacobian_measurement_function()
@@ -148,6 +150,7 @@ for t in range(num_steps):
     actual_soc = soc_true_data[t]
     max_ae = max(max_ae, abs(SoC_est[0, 0] - actual_soc))
 
+
 # Affichage des résultats
 
 SoC_values = [((x+soc_true_data[0])/max(SoC_values))*100 for x in SoC_values]
@@ -159,17 +162,21 @@ soc_true_data = [x for x in soc_true_data]
 print('max soc estim', max(SoC_values))
 print('max vrai soc', max(soc_true_data))
 
-plt.plot(range(num_steps), SoC_values, label="Estimation SoC")
-plt.plot(range(num_steps), soc_true_data, label="Real SoC 2000")
-plt.xlabel("Temps (s)")
-plt.ylabel("État de Charge (SoC)")
-plt.title("Estimation du SoC avec un Filtre de Kalman Étendu")
-plt.legend()
-plt.show()
-
 # Affichage de l'erreur maximale
 print(f"Erreur Absolue Maximale : {max_ae}")
 
 stop = timeit.default_timer()
 
 print('Time: ', stop - start)
+
+plt.plot(range(num_steps), SoC_values, label="Estimated SoC")
+plt.plot(range(num_steps), soc_true_data, label="Real SoC 2000")
+plt.xlabel("Time (s)")
+plt.ylabel("State Of Charge (SoC)")
+plt.title("SoC estimation with an Extended Kalman filter")
+plt.legend()
+plt.show()
+
+if input("Save SoC_values to a file? (y/n): ") == "y":
+    # save SoC_values to a file
+    np.savetxt("SoC_values.csv", SoC_values, delimiter=",")
