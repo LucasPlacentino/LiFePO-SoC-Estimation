@@ -76,7 +76,7 @@ R_int_charge = 0.06 #R_int_chg
 
 soc_ocv_discharge = data_ocv_discharge["data_SOC"].values
 voltage_ocv_discharge = data_ocv_discharge["data_U"].values
-R_int_discharge = -0.02 #R_int_dsg #! negative ?
+R_int_discharge = 0.06 #R_int_dsg #! negative ?
 
 # Paramètres de la batterie
 nominal_capacity = 280.0  # Capacité nominale en Ah (ajuster en fonction de la batterie)
