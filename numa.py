@@ -81,13 +81,14 @@ R_int_discharge = -0.02 #R_int_dsg #! negative ?
 nominal_capacity = 280.0  # Capacité nominale en Ah (ajuster en fonction de la batterie)
 dt = 1.0  # Pas de temps en secondes
 initial_SoC = soc_true_data[0]  # SoC initial
+#initial_SoC = 90 # test trensient
 
 # Initialisation du filtre de Kalman
 SoC_est = np.array([[initial_SoC]])
 # EKF parameters :
-P = np.array([[1]])
-Q = np.array([[1e-5]])
-R = np.array([[0.1]])
+P = np.array([[50]])
+Q = np.array([[1e-20]])
+R = np.array([[1e-1]])
 
 
 # Modèle de tension utilisant les courbes de charge et décharge
@@ -114,8 +115,15 @@ def jacobian_state_transition():
 
 
 # Jacobienne de la mesure
-def jacobian_measurement_function():
-    return np.array([[1]])
+#def jacobian_measurement_function(*args, **kwargs):
+#    return np.array([[1]])
+
+def jacobian_measurement_function(SoC, current, delta=1e-5):
+    # Numerical differentiation for dV_pred / dSoC
+    V_plus = voltage_model(SoC + delta, current)
+    V_minus = voltage_model(SoC - delta, current)
+    dV_dSoC = (V_plus - V_minus) / (2 * delta)
+    return np.array([[dV_dSoC]])
 
 # Initialisation pour le calcul de l'erreur maximale
 max_ae = 0
@@ -131,7 +139,7 @@ for t in range(num_steps):
     #temperature = temperature_data[t]
 
     # Prédiction
-    SoC_pred = SoC_est - np.array([[current * dt / (nominal_capacity)]]) # nomilal_capacity in Ah, dt in s -> *3600 to convert Ah to As
+    SoC_pred = SoC_est - np.array([[current * dt / (nominal_capacity)]]) # nominal_capacity in Ah, dt in s -> *3600 to convert Ah to As ?
     F = jacobian_state_transition()
     P_pred = F @ P @ F.T + Q
 
@@ -140,9 +148,10 @@ for t in range(num_steps):
     voltage_pred = voltage_model(SoC_pred[0, 0], current, mode=mode)
 
     # Mise à jour (filtrage)
-    H = jacobian_measurement_function()
-    K = P_pred @ H.T @ np.linalg.inv(H @ P_pred @ H.T + R)
-    innovation = measured_voltage - voltage_pred
+    #H = jacobian_measurement_function()
+    H = jacobian_measurement_function(SoC_pred[0, 0], current)
+    K = P_pred @ H.T @ np.linalg.inv(H @ P_pred @ H.T + R) # +1e-9 to avoid singular matrix
+    innovation = measured_voltage - voltage_pred # difference between measured and predicted voltage
     SoC_est = SoC_pred + K @ np.array([[innovation]]) # clip within 0 and 1 or 0 and 100 ?
     P = (np.eye(len(P)) - K @ H) @ P_pred
 
@@ -154,24 +163,30 @@ for t in range(num_steps):
     max_ae = max(max_ae, abs(SoC_est[0, 0] - actual_soc))
 print("loop done.")
 
+max_SoC_values = max(SoC_values)
+min_SoC_values = min(SoC_values)
+
+factor = int(max_SoC_values / max(soc_true_data))
+factor = 57
 
 # Affichage des résultats
-max_SoC_values = max(SoC_values)
 #SoC_values += initial_SoC  # Ajouter le SoC initial
-#SoC_values = np.array(SoC_values)/57
-##SoC_values /= max_SoC_values  # Normaliser
-##SoC_values *= 100  # Convertir en pourcentage
-#SoC_values *= -1  # Inverser pour correspondre aux données réelles
-#SoC_values += initial_SoC  # Ajouter le SoC initial
+SoC_values = np.array(SoC_values)/factor
+#SoC_values /= max_SoC_values  # Normaliser
+#SoC_values *= 100  # Convertir en pourcentage
+SoC_values *= -1  # Inverser pour correspondre aux données réelles
+SoC_values += initial_SoC  # Ajouter le SoC initial
 
 # error = sum((SoC_values-soc_true_data)/SoC_values)/len(SoC_values)
 #print('error : ', error*100, ' %')
 
-print('max soc estim', max_SoC_values)
+print('max soc estim', max_SoC_values/factor *(-1) + initial_SoC)
 print('max vrai soc', max(soc_true_data))
+print('min soc estim', min_SoC_values/factor *(-1) + initial_SoC)
+print('min vrai soc', min(soc_true_data))
 
 # Affichage de l'erreur maximale
-print(f"Maximum Absolute Error (MaxAE): {max_ae}")
+print(f"Maximum Absolute Error (MaxAE): {max_ae/factor}")
 
 #print(f'Root Mean Square Error (RMSE): {np.sqrt(np.mean((np.array(SoC_values) - np.array(soc_true_data))**2))}')
 
