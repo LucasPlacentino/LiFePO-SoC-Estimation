@@ -1,28 +1,28 @@
+import statistics
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import timeit
-import statistics
+
+PATH = "data/" # path to the data files
 
 start = timeit.default_timer()
 
-
 print("Getting data from OCV-SOC file...")
-#data_ocv_charge = pd.read_csv("charging_OCV_curve.csv", sep=';', header=None)
-data_ocv_charge = pd.read_excel("data/Cha_Dis_OCV_SOC_Data.xlsx", header=1, usecols="B:C", skiprows=0) # voir les trucs à rajouter en arg de read_excel
+# Load the charge OCV data
+data_ocv_charge = pd.read_excel(PATH + "Cha_Dis_OCV_SOC_Data.xlsx", header=1, usecols="B:C", skiprows=0) # check additional arguments for read_excel
 data_ocv_charge.columns = ['data_SOC', 'data_U']
 print("data_ocv_charge (head):")
 print(data_ocv_charge.head())
 
-#data_ocv_discharge = pd.read_csv("discharging_OCV_curve.csv", sep=';', header=None)
-data_ocv_discharge = pd.read_excel("data/Cha_Dis_OCV_SOC_Data.xlsx", header=1, usecols="E:F", skiprows=0) # voir les trucs à rajouter en arg de read_excel
+# Load the discharge OCV data
+data_ocv_discharge = pd.read_excel(PATH + "Cha_Dis_OCV_SOC_Data.xlsx", header=1, usecols="E:F", skiprows=0) # check additional arguments for read_excel
 data_ocv_discharge.columns = ['data_SOC', 'data_U']
 print("data_ocv_discharge (head):")
 print(data_ocv_discharge.head())
 
-
 """
-# We don't use the hppc test right now, as impedance can be (for now) estimated as a constant value (see plots)
+# We don't use the HPPC test right now, as impedance can be (for now) estimated as a constant value (see plots)
 print("Getting data from HPPC files...")
 data_hppc_chg = pd.read_excel("data/EVE_HPPC_1_25degree_CHG-injectionTemplate.xlsx", header=3, usecols="A:D")
 data_hppc_chg.columns = ['seconds', 'voltage', 'current_inv', 'SOC_true']
@@ -34,10 +34,8 @@ print("data_hppc_dsg (head):")
 print(data_hppc_dsg.head())
 """
 
-#input("Press Enter to continue...")
-
 # Dataset files are in "./data/Scenario-{nb}/{filename}.xlsx"
-# the directory "./data/" is in the gitignore to prevent uploading the confidential dataset to the repo
+# The directory "./data/" is in the gitignore to prevent uploading the confidential dataset to the repo
 files = [
     "Scenario-1/GenerateTestData_S1_Day0to4.xlsx",
     "Scenario-1/GenerateTestData_S1_Day4to7.xlsx",
@@ -56,15 +54,12 @@ data_choice: int = int(input(f"Select data file: "))
 
 print("Reading data from file:", files[data_choice],"...")
 # read file with these (hardcoded) specific columns placement and headers:
-data = pd.read_excel("data/"+files[int(data_choice)], usecols="B:D,G", skiprows=[0,3],header=1) # read file situated in ./data/Scenario-{nb}/{filename}.xlsx
+data = pd.read_excel(PATH + files[int(data_choice)], usecols="B:D,G", skiprows=[0,3],header=1) # read file situated in ./data/Scenario-{nb}/{filename}.xlsx
 data.columns = ['voltage', 'current_inv', 'SOC_true', 'temperature']
-print(data.head()) # look the first few lines of the dataframe to manually verify the data has been read correctly
-#input("Run algorithm? Press Enter to continue...")
+print(data.head()) # view the first few lines of the dataframe to manually verify the data has been read correctly
+input("Run algorithm? Press Enter to continue...")
 
-print('Reading Excel file took ', timeit.default_timer() - start, 's') # just reading the excel file takes 17seconds RIP
-
-
-# Extraction des colonnes par index
+# Extract columns by index
 voltage_data = data['voltage'].values
 current_data = data['current_inv'].values
 soc_true_data = data['SOC_true'].values
@@ -78,21 +73,18 @@ soc_ocv_discharge = data_ocv_discharge["data_SOC"].values
 voltage_ocv_discharge = data_ocv_discharge["data_U"].values
 R_int_discharge = 0.06 #R_int_dsg #! negative ?
 
-# Paramètres de la batterie
-nominal_capacity = 280.0  # Capacité nominale en Ah (ajuster en fonction de la batterie)
-dt = 1.0  # Pas de temps en secondes
-initial_SoC = soc_true_data[0]  # SoC initial
-#initial_SoC = 90 # test trensient
+# Battery parameters
+nominal_capacity = 280.0  # Nominal capacity in Ah (adjust based on the battery)
+dt = 1.0  # Time step in seconds
+initial_SoC = soc_true_data[0]  # Initial SoC
 
-# Initialisation du filtre de Kalman
+# Kalman filter initialization
 SoC_est = np.array([[initial_SoC]])
-# EKF parameters :
 P = np.array([[50]])
 Q = np.array([[1e-20]])
-R = np.array([[1e-1]])
+R = np.array([[0.1]])
 
-
-# Modèle de tension utilisant les courbes de charge et décharge
+# Voltage model using charge and discharge curves
 def voltage_model(SOC, current, temperature=None, mode="discharge"):
     if mode == "charge":
         soc_ocv = soc_ocv_charge
@@ -103,111 +95,78 @@ def voltage_model(SOC, current, temperature=None, mode="discharge"):
         voltage_ocv = voltage_ocv_discharge
         R_int = R_int_discharge
 
-    # Interpolation de la tension en fonction du SoC
+    # Voltage interpolation based on SoC
     V_oc = np.interp(SOC, soc_ocv, voltage_ocv)
 
-    # Ajustement selon la résistance interne spécifique
+    # Adjustment according to the specific internal resistance
     return V_oc - current * R_int
 
-
-# Jacobienne de la transition d'état (approximation pour le SoC)
+# Jacobian of the state transition (approximation for the SoC)
 def jacobian_state_transition():
     return np.array([[1]])
 
+# Jacobian of the measurement function
+def jacobian_measurement_function():
+    return np.array([[1]])
 
-# Jacobienne de la mesure
-#def jacobian_measurement_function(*args, **kwargs):
-#    return np.array([[1]])
-
-def jacobian_measurement_function(SoC, current, delta=1e-5):
-    # Numerical differentiation for dV_pred / dSoC
-    V_plus = voltage_model(SoC + delta, current)
-    V_minus = voltage_model(SoC - delta, current)
-    dV_dSoC = (V_plus - V_minus) / (2 * delta)
-    return np.array([[dV_dSoC]])
-
-# Initialisation pour le calcul de l'erreur maximale
+# Initialization for maximum error calculation
 max_ae = 0
 
-# Boucle de simulation
+# Simulation loop
 num_steps = len(voltage_data)
-print(f"Steps: {num_steps}")
+print(f"Total number of steps : {num_steps}")
 SoC_values = []
-
 error =[]
-OffSet = initial_SoC
+OffSet = soc_true_data[0]
 
 for t in range(num_steps):
     current = current_data[t]
     measured_voltage = voltage_data[t]
     #temperature = temperature_data[t]
 
-    # Prédiction
-    SoC_pred = SoC_est - np.array([[current * dt / (nominal_capacity)]]) # nominal_capacity in Ah, dt in s -> *3600 to convert Ah to As ?
+    # Prediction
+    SoC_pred = SoC_est + np.array([[current * dt / nominal_capacity]])
     F = jacobian_state_transition()
     P_pred = F @ P @ F.T + Q
 
-    # Tension prédite (choix entre charge/décharge selon le courant)
+    # Predicted voltage (choose between charge/discharge based on current)
     mode = "charge" if current > 0 else "discharge" # > or < ?
     voltage_pred = voltage_model(SoC_pred[0, 0], current, mode=mode)
 
-    # Mise à jour (filtrage)
-    #H = jacobian_measurement_function()
-    H = jacobian_measurement_function(SoC_pred[0, 0], current)
-    K = P_pred @ H.T @ np.linalg.inv(H @ P_pred @ H.T + R) # +1e-9 to avoid singular matrix
-    innovation = measured_voltage - voltage_pred # difference between measured and predicted voltage
-    SoC_est = SoC_pred + K @ np.array([[innovation]]) # clip within 0 and 1 or 0 and 100 ?
+    # Update (filtering)
+    H = jacobian_measurement_function()
+    K = P_pred @ H.T @ np.linalg.inv(H @ P_pred @ H.T + R)
+    innovation = measured_voltage - voltage_pred
+    SoC_est = SoC_pred + K @ np.array([[measured_voltage - voltage_pred]])
     P = (np.eye(len(P)) - K @ H) @ P_pred
 
-    # Stocker la valeur estimée de SoC
+    # Store the estimated SoC value
     SoC_values.append(SoC_est[0, 0])
 
-    # Calcul de l'erreur absolue maximale
+    # Calculate the maximum absolute error
     actual_soc = soc_true_data[t]
-    max_ae = max(max_ae, abs(SoC_est[0, 0] - actual_soc))
-    error.append(abs(actual_soc/40 + OffSet - SoC_est[0, 0]) /SoC_est[0,0])
-print("loop done.")
+    error.append(abs(actual_soc/40 + OffSet - SoC_est[0, 0]) / SoC_est[0,0])
 
-#max_SoC_values = max(SoC_values)
-#min_SoC_values = min(SoC_values)
-#factor = 57
-## Affichage des résultats
-##SoC_values += initial_SoC  # Ajouter le SoC initial
-#SoC_values = np.array(SoC_values)/factor
-##SoC_values /= max_SoC_values  # Normaliser
-##SoC_values *= 100  # Convertir en pourcentage
-#SoC_values *= -1  # Inverser pour correspondre aux données réelles
-#SoC_values += initial_SoC  # Ajouter le SoC initial
+# Display results
+
+print('max estimated soc', max(SoC_values))
+print('max real soc', max(soc_true_data))
+
+stop = timeit.default_timer()
+print('Time: ', stop - start)
 
 SoC_values = np.array(SoC_values)/40 + OffSet
 
 error = abs(statistics.mean(error))
 print("error", abs(1-error)*100, ' %')
 
-# error = sum((SoC_values-soc_true_data)/SoC_values)/len(SoC_values)
-#print('error : ', error*100, ' %')
-
-#print('max soc estim', max_SoC_values/factor *(-1) + initial_SoC)
-#print('max vrai soc', max(soc_true_data))
-#print('min soc estim', min_SoC_values/factor *(-1) + initial_SoC)
-#print('min vrai soc', min(soc_true_data))
-
-# Affichage de l'erreur maximale
-#print(f"Maximum Absolute Error (MaxAE): {max_ae/factor}")
-
-#print(f'Root Mean Square Error (RMSE): {np.sqrt(np.mean((np.array(SoC_values) - np.array(soc_true_data))**2))}')
-
-stop = timeit.default_timer()
-print('Time: ', stop - start, 's')
+np.savetxt("SoC_values_estim.csv", SoC_values, delimiter=",")
+np.savetxt("SoC_values_real.csv", soc_true_data, delimiter=",")
 
 plt.plot(range(num_steps), SoC_values, label="Estimated SoC")
-plt.plot(range(num_steps), soc_true_data, label="True SoC")
+plt.plot(range(num_steps), soc_true_data, label="Real SoC")
 plt.xlabel("Time (s)")
-plt.ylabel("State Of Charge (SoC)")
-plt.title("SoC estimation with an Extended Kalman filter")
+plt.ylabel("State of Charge (SoC)")
+plt.title(f"SoC Estimation with Extended Kalman Filter (Scenario {data_choice})")
 plt.legend()
 plt.show()
-
-if input("Save SoC_values to a file? (y/n): ") == "y":
-    # save SoC_values to a file
-    np.savetxt("SoC_values.csv", SoC_values, delimiter=",")
