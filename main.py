@@ -1,28 +1,28 @@
-import statistics
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import timeit
-
-PATH = "data/" # path to the data files
+import statistics
 
 start = timeit.default_timer()
 
+
 print("Getting data from OCV-SOC file...")
-# Load the charge OCV data
-data_ocv_charge = pd.read_excel(PATH + "Cha_Dis_OCV_SOC_Data.xlsx", header=1, usecols="B:C", skiprows=0) # check additional arguments for read_excel
+#data_ocv_charge = pd.read_csv("charging_OCV_curve.csv", sep=';', header=None)
+data_ocv_charge = pd.read_excel("data/Cha_Dis_OCV_SOC_Data.xlsx", header=1, usecols="B:C", skiprows=0) # voir les trucs à rajouter en arg de read_excel
 data_ocv_charge.columns = ['data_SOC', 'data_U']
 print("data_ocv_charge (head):")
 print(data_ocv_charge.head())
 
-# Load the discharge OCV data
-data_ocv_discharge = pd.read_excel(PATH + "Cha_Dis_OCV_SOC_Data.xlsx", header=1, usecols="E:F", skiprows=0) # check additional arguments for read_excel
+#data_ocv_discharge = pd.read_csv("discharging_OCV_curve.csv", sep=';', header=None)
+data_ocv_discharge = pd.read_excel("data/Cha_Dis_OCV_SOC_Data.xlsx", header=1, usecols="E:F", skiprows=0) # voir les trucs à rajouter en arg de read_excel
 data_ocv_discharge.columns = ['data_SOC', 'data_U']
 print("data_ocv_discharge (head):")
 print(data_ocv_discharge.head())
 
+
 """
-# We don't use the HPPC test right now, as impedance can be (for now) estimated as a constant value (see plots)
+# We don't use the hppc test right now, as impedance can be (for now) estimated as a constant value (see plots)
 print("Getting data from HPPC files...")
 data_hppc_chg = pd.read_excel("data/EVE_HPPC_1_25degree_CHG-injectionTemplate.xlsx", header=3, usecols="A:D")
 data_hppc_chg.columns = ['seconds', 'voltage', 'current_inv', 'SOC_true']
@@ -34,8 +34,10 @@ print("data_hppc_dsg (head):")
 print(data_hppc_dsg.head())
 """
 
+#input("Press Enter to continue...")
+
 # Dataset files are in "./data/Scenario-{nb}/{filename}.xlsx"
-# The directory "./data/" is in the gitignore to prevent uploading the confidential dataset to the repo
+# the directory "./data/" is in the gitignore to prevent uploading the confidential dataset to the repo
 files = [
     "Scenario-1/GenerateTestData_S1_Day0to4.xlsx",
     "Scenario-1/GenerateTestData_S1_Day4to7.xlsx",
@@ -54,7 +56,7 @@ data_choice: int = int(input(f"Select data file: "))
 
 print("Reading data from file:", files[data_choice],"...")
 # read file with these (hardcoded) specific columns placement and headers:
-data = pd.read_excel(PATH + files[int(data_choice)], usecols="B:D,G", skiprows=[0,3],header=1) # read file situated in ./data/Scenario-{nb}/{filename}.xlsx
+data = pd.read_excel("data/" + files[int(data_choice)], usecols="B:D,G", skiprows=[0,3],header=1) # read file situated in ./data/Scenario-{nb}/{filename}.xlsx
 data.columns = ['voltage', 'current_inv', 'SOC_true', 'temperature']
 print(data.head()) # view the first few lines of the dataframe to manually verify the data has been read correctly
 input("Run algorithm? Press Enter to continue...")
