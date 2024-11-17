@@ -237,7 +237,7 @@ for t in range(num_steps):
 # Displaying results
 
 print('max soc estim', max(SoC_values))
-print('max vrai soc', max(soc_true_data))
+print('max true soc', max(soc_true_data))
 
 
 # Display maximum error
