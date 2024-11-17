@@ -64,7 +64,7 @@ Root Mean Square Error (RMSE): 0.0624526869097305 %
 
 <img width="641" alt="Capture d’écran 2024-11-17 à 22 57 52" src="https://github.com/user-attachments/assets/d61d3c4b-38e2-4d00-a6f5-8014063e5668">
 
-> It is difficult to see both colored lines as they are on top of each other.
+> It is difficult to see both colored lines as they are almost on top of each other.
 
 ## Improvements
 
