@@ -15,9 +15,9 @@ start = timeit.default_timer()
 # it in real-time)
 
 
-test_str = str(input("Run test? (Y/n) ")).lower()
+test_str = str(input("Run DEBUG? This will use matplotlib to plot data, use with UI! (Y/n) ")).lower()
 TEST = True if test_str == "y" else False
-print(f"Running in {"test mode" if TEST else "prod mode"}")
+print(f"Running in {"debug mode" if TEST else "prod mode"}")
 
 
 # We read static data from the OCV-SOC and HPPC files during runtime for simplicity in this simulation,
@@ -78,13 +78,18 @@ if TEST:
     # read file with these (hardcoded) specific columns placement and headers:
     data = pd.read_excel(files[int(data_choice)], usecols="B:D,G", skiprows=[0,3],header=1) # read file situated in ./data/Scenario-{nb}/{filename}.xlsx
 else:
-    print("Reading ./test.csv file...")
-    data = pd.read_csv("test.csv", sep=';', header=None) # ? sep correct ?
+    print("Reading ./test.xlsx file... (THE SPREADSHEET FORMATTING MUST BE THE SAME AS THE PROVIDED TEST DATA)")
+    #data = pd.read_csv("test.csv", sep=';', header=None) # ? sep correct ?
     #data = pd.read_csv("test.csv", header=None) # ?
+    data = pd.read_excel("test.xlsx", usecols="B:D,G", skiprows=[0,3],header=1)
+    # same columns format as test provided data
 
 data.columns = ['voltage', 'current_inv', 'SOC_true', 'temperature']
 print(data.head()) # view the first few lines of the dataframe to manually verify the data has been read correctly
 #input("Run algorithm? Press Enter to continue...")
+
+time_read = timeit.default_timer()
+print(f"Time to read data: {time_read - start} s")
 
 # Extraction des colonnes par index
 voltage_data = data['voltage'].values
@@ -96,16 +101,49 @@ temperature_data = data['temperature'].values
 nominal_capacity = 280.0  # Capacité nominale en Ah (ajuster en fonction de la batterie)
 dt = 1.0  # Pas de temps en secondes
 initial_voltage = voltage_data[0]
+print(f"Initial voltage: {initial_voltage}")
 
 initial_SoC = soc_true_data[0]
-#initial_SoC = np.interp(initial_voltage, data_ocv_discharge["data_U"], data_ocv_discharge["data_SOC"])
 
+"""
+# We could find the initial SoC by interpolating the initial voltage from the OCV-SOC curves
+# or find the closest. This did not work well in practice, so we use the initial SoC from the data
+initial_current = np.mean(current_data[0:10])
+if initial_current < 0:
+    ocv_SOC_dis = data_ocv_discharge["data_SOC"].values
+    ocv_U_dis = data_ocv_discharge["data_U"].values
+    #initial_SoC = np.interp(initial_voltage, ocv_U_dis, ocv_SOC_dis)
+    index_closest_voltage_dis = np.argmin(np.abs(ocv_U_dis - initial_voltage))
+    closest_SoC_dis = ocv_SOC_dis[index_closest_voltage_dis]
+    initial_SoC_dis = closest_SoC_dis
+    print(f"Initial SoC DIS: {initial_SoC_dis}")
+    initial_SoC = initial_SoC_dis
+else:
+    ocv_SOC_chg = data_ocv_charge["data_SOC"].values
+    ocv_U_chg = data_ocv_charge["data_U"].values
+    #initial_SoC = np.interp(initial_voltage, ocv_U_chg, ocv_SOC_chg)
+    index_closest_voltage_chg = np.argmin(np.abs(ocv_U_chg - initial_voltage))
+    closest_SoC_chg = ocv_SOC_chg[index_closest_voltage_chg]
+    initial_SoC_chg = closest_SoC_chg
+    print(f"Initial SoC CHG: {initial_SoC_chg}")
+    initial_SoC = initial_SoC_chg
+# OR take the mean of the two SoC values (charge and discharge)
+#initial_SoC = (initial_SoC_dis + initial_SoC_chg) / 2
+"""
+
+#initial_SoC = 50 # TEST
+
+print(f"Initial SoC: {initial_SoC}, true initial SoC: {soc_true_data[0]}")
 
 # Kalman filter initialization
 SoC_est = np.array([[initial_SoC]])
 P = np.array([[1]])     # tune this value
 Q = np.array([[1e-10]]) # tune this value
 R = np.array([[0.05]])  # tune this value
+
+#OffSet = soc_true_data[0]
+OffSet = 0
+factor = -36.12201 # -30.82 # -35.341 # -36.12201
 
 
 # Modèle de tension utilisant les courbes de charge et décharge
@@ -116,6 +154,7 @@ def voltage_model(SOC, current, temperature=None, mode="discharge"): # temp not 
         R_int = 0.06 #R_int_chg
         # todo: use hppc test data to get R_int for current SoC
         # constant R value is sufficiently accurate for now
+        #R_int = impedance_from_hppc_charge(SOC)
     else:
         soc_ocv = data_ocv_discharge["data_SOC"].values
         voltage_ocv = data_ocv_discharge["data_U"].values
@@ -132,10 +171,10 @@ def voltage_model(SOC, current, temperature=None, mode="discharge"): # temp not 
 def jacobian_state_transition():
     return np.array([[1]])
 
-## Try this one out :
+## We'll try this one out later :
 #def jacobian_state_transition(current, dt, nominal_capacity):
 #    # For simplicity, assuming a linear model with respect to current
-#    # but you could include a term for temperature or resistance changes
+#    # but could include a term for temperature or resistance changes
 #    jacobian = np.array([[1 - (current * dt / nominal_capacity)]])
 #    return jacobian
 
@@ -159,13 +198,10 @@ max_ae = 0
 num_steps = len(voltage_data)
 print(f"Total nb of steps : {num_steps}")
 SoC_values = []
-#error = []
-OffSet = soc_true_data[0]
-OffSet = 0
-factor = -35.341 # -30.82 # -35.341
+errors = []
 
 for t in range(num_steps):
-    current = current_data[t]/(-35.341) # -30.82 # -35.341
+    current = current_data[t]/factor # -30.82 # -35.341
     #current = np.mean(current_data[:5]) / -30.82
     measured_voltage = voltage_data[t]
     temperature = temperature_data[t]
@@ -194,12 +230,12 @@ for t in range(num_steps):
 
     # Calcul de l'erreur absolue maximale
     actual_soc = soc_true_data[t]
-    #error.append(abs(actual_soc - OffSet - SoC_est[0, 0]) /SoC_est[0,0])
+
+    errors.append(actual_soc - SoC_est[0, 0])
 
     absolute_error = abs(SoC_est[0, 0] - actual_soc)
     if absolute_error > max_ae:
         max_ae = absolute_error
-    #max_ae = max(max_ae, abs(SoC_est[0, 0] - actual_soc))
 
 
 
@@ -208,64 +244,68 @@ for t in range(num_steps):
 print('max soc estim', max(SoC_values))
 print('max vrai soc', max(soc_true_data))
 
-#SoC_values = [((x+soc_true_data[0])/max(SoC_values))*100 for x in SoC_values]
-#soc_true_data = [x for x in soc_true_data]
-
-
-# Affichage des résultats
-#max_SoC_values = max(SoC_values)
-#SoC_values += initial_SoC  # Ajouter le SoC initial
-#SoC_values /= max_SoC_values  # Normaliser
-#SoC_values *= 100  # Convertir en pourcentage
-#SoC_values *= -1  # Inverser pour correspondre aux données réelles
-#SoC_values += initial_SoC  # Ajouter le SoC initial
-
-
-#SoC_values = [((x+soc_true_data[0])/max(SoC_values))*100 for x in SoC_values]
-#soc_true_data = [x for x in soc_true_data]
-
-#print('max soc estim', max(SoC_values))
-#print('max vrai soc', max(soc_true_data))
-
-# Fonction pour créer un fichier CSV à partir d'une liste de données
-#def creer_fichier_csv(nom_fichier, donnees):
-    #with open(nom_fichier, mode='w', newline='') as fichier:
-        #writer = csv.writer(fichier)
-        #writer.writerows(donnees)
-    #print(f"Fichier '{nom_fichier}' créé avec succès.")
-
-# Création des deux fichiers CSV
-#creer_fichier_csv('actual_soc.csv', actual_soc)
-#creer_fichier_csv('fichier2.csv', soc_true_data)
-
 
 # Affichage de l'erreur maximale
 print(f"Maximum Absolute Error (MaxAE) : {max_ae} %")
 
-stop = timeit.default_timer()
-
-print('Time: ', stop - start, 's')
-
 SoC_values = np.array(SoC_values) #+ OffSet
-
-#error = abs(statistics.mean(error))
-#print("error", abs(1-error)*100, ' %')
-
 
 squared_errors = [(actual_soc + OffSet - est_soc)**2 for actual_soc, est_soc in zip(soc_true_data, SoC_values)] # list of squared errors # yo the zip() function is actually so cool so useful
 mse = sum(squared_errors) / len(squared_errors)  # Mean Squared Error
 rmse = np.sqrt(mse) # Root Mean Squared Error
 print(f"Root Mean Square Error (RMSE): {rmse} %")
 
+stop = timeit.default_timer()
 
-plt.plot(range(num_steps), SoC_values, label="SoC Estimation")
-plt.plot(range(num_steps), soc_true_data, label="Real SoC")
-# make the y axis of the plot go from 0 to 100:
-plt.ylim(0, 100)
-plt.xlim(0, num_steps)
-plt.grid()
-plt.xlabel("Time [s]")
-plt.ylabel("State of Charge (SoC) [%]")
-plt.title("SoC Estimation with Extended Kalman Filter")
-plt.legend()
-plt.show()
+print('Time: ', stop - time_read, 's')
+
+if TEST:
+    plt.plot(range(num_steps), SoC_values, label="SoC Estimation")
+    plt.plot(range(num_steps), soc_true_data, label="Real SoC")
+    # make the y axis of the plot go from 0 to 100:
+    plt.ylim(0, 100)
+    plt.xlim(0, num_steps)
+    plt.grid()
+    plt.xlabel("Time [s]")
+    plt.ylabel("State of Charge (SoC) [%]")
+    plt.title("SoC Estimation with Extended Kalman Filter")
+    plt.legend()
+    plt.show()
+
+    time_plot = timeit.default_timer()
+    print('Plot time: ', time_plot - stop, 's')
+
+    # write to out.xlsx file (along with the rest of the initial test.xlsx file) column "Unnamed: 4" the values in SoC_values and column "Unnamed: 5" the errors
+    print("Saving SoC_values to out.xlsx...")
+    print("Copying data file to out.xlsx")
+    out = pd.read_excel(files[int(data_choice)])
+    print(out.head())
+    print("Adding SoC_values and errors to out.xlsx")
+    out.loc[3:3+len(SoC_values)-1, 'Unnamed: 4'] = SoC_values
+    out.loc[3:3+len(errors)-1, 'Unnamed: 5'] = errors
+    out.columns = ['Name', '', '', '', '', '', '', '']
+    if bool(input("Save to FILE out.xlsx? (Y/n) ").lower() == "y"):
+        print("Saving out.xlsx")
+        out.to_excel("out.xlsx", index=False, header=True)
+    print(out.head())
+    print(out.tail())
+
+    time_save = timeit.default_timer()
+    print('Save time: ', time_save - time_plot, 's')
+
+else:
+    # write to out.xlsx file (along with the rest of the initial test.xlsx file) column "Unnamed: 4" the values in SoC_values and column "Unnamed: 5" the errors
+    print("Saving SoC_values to out.xlsx...")
+    print("Copying data file to out.xlsx")
+    out = pd.read_excel("test.xlsx")
+    print("Adding SoC_values and errors to out.xlsx")
+    out.loc[3:3+len(SoC_values)-1, 'Unnamed: 4'] = SoC_values
+    out.loc[3:3+len(errors)-1, 'Unnamed: 5'] = errors
+    print("Saving out.xlsx")
+    out.columns = ['Name', '', '', '', '', '', '', '']
+    out.to_excel("out.xlsx", index=False, header=True)
+
+    time_save = timeit.default_timer()
+    print('Save time: ', time_save - stop, 's')
+
+print("Done.")
