@@ -21,27 +21,21 @@ We use an empirical model because we got the OCV-SOC relationship provided by th
 ```
 
 ## Usage
-Run the `main.py` script with python and choose the excel file you would like to use for the analysis.
+Run the `main.py` script with python and choose the excel file you would like to use for the analysis.  
 
 ```bash
 $ python main.py
+Running in prod mode
 Getting data from OCV-SOC file...
 data_ocv_charge (head):
     [...]
 data_ocv_discharge (head):
     [...]
-0. Scenario-1/GenerateTestData_S1_Day0to4.xlsx
-1. Scenario-1/GenerateTestData_S1_Day4to7.xlsx
-2. Scenario-2/GenerateTestData_S2_Day0to4.xlsx
-3. Scenario-2/GenerateTestData_S2_Day4to7.xlsx
-4. Scenario-3/GenerateTestData_S3_Day0to4.xlsx
-5. Scenario-3/GenerateTestData_S3_Day4to7.xlsx
-6. Scenario-4/GenerateTestData_S4_Day0to4.xlsx
-7. Scenario-4/GenerateTestData_S4_Day4to7.xlsx
-Select data file: 
+Reading ./test.xlsx file... (THE SPREADSHEET FORMATTING MUST BE THE SAME AS THE PROVIDED TEST DATA)
+[...]
 ```
 
-Input a number between 0 and 7, it will then give the plot and results after the computation.  
+It will then get the `test.xlsx` file in the script directory and read it, execute the algorithm with the data, and generate the output `out.xlsx` results file.    
 
 ## Extended Kalman Filter (EKF) Approach
 We use an EKF algorithm to estimate the SoC by linearizing the non-linear state and measurement equations around the current estimate. This method involves computing Jacobians for both the state transition and the measurement model.  
