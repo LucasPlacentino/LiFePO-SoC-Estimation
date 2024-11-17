@@ -64,9 +64,11 @@ if TEST:
     # read file with these (hardcoded) specific columns placement and headers:
     data = pd.read_excel(files[int(data_choice)], usecols="B:D,G", skiprows=[0,3],header=1) # read file situated in ./data/Scenario-{nb}/{filename}.xlsx
 else:
-    print("Reading ./test.csv file...")
-    data = pd.read_csv("test.csv", sep=';', header=None) # ? sep correct ?
+    print("Reading ./test.xlsx file... (THE SPREADSHEET FORMATTING MUST BE THE SAME AS THE PROVIDED TEST DATA)")
+    #data = pd.read_csv("test.csv", sep=';', header=None) # ? sep correct ?
     #data = pd.read_csv("test.csv", header=None) # ?
+    data = pd.read_excel("test.xlsx", usecols="B:D,G", skiprows=[0,3],header=1)
+    # same columns format as test provided data
 
 
 data.columns = ['voltage', 'current_inv', 'SOC_true', 'temperature']
@@ -188,3 +190,6 @@ if TEST:
     plt.show()
 else:
     np.savetxt("out.csv", SoC_values, delimiter=",")
+    # save as excel file
+    df = pd.DataFrame(SoC_values)
+    df.to_excel("out.xlsx", index=False, header=False)
