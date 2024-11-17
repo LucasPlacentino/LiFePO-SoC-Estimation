@@ -32,7 +32,13 @@ data_ocv_charge (head):
 data_ocv_discharge (head):
     [...]
 Reading ./test.xlsx file... (THE SPREADSHEET FORMATTING MUST BE THE SAME AS THE PROVIDED TEST DATA)
-[...]
+   voltage  current_inv   SOC_true  temperature
+    [...]
+Time to read data: [...] s
+Initial voltage: [...]
+Initial SoC: [...], true initial SoC: [...]
+Total nb of steps : [...]
+    [...etc...]
 ```
 
 It will then get the `test.xlsx` file in the script directory and read it, execute the algorithm with the data, and generate the output `out.xlsx` results file.    
