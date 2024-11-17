@@ -50,9 +50,9 @@ soc_values = soc_true_data  # Valeurs d'état de charge (SOC) en % (exemple)
 impedances = np.array([calculate_impedance(voltages_pulse[i], voltages_rest[i], currents[i]) for i in range(steps)])
 
 # Affichage des résultats
-print("SOC (%) | Impédance (Ohms)")
+print("SOC (%) | Impedance (Ohms)")
 for i in range(steps):
-    print(f"{soc_values[i]:3}   | {impedances[i]:.4f}")
+    print(f"{soc_values[i]:3}  % | {impedances[i]:.4f}  Ohms")
 
 # Visualisation de l'impédance en fonction du SOC
 plt.plot(soc_values, impedances, marker='o')
@@ -61,3 +61,8 @@ plt.xlabel("State Of Charge (SOC) [%]")
 plt.ylabel("Impedance [Ohms]")
 plt.grid(True)
 plt.show()
+
+# TEST:
+test_SoC = 50
+resistance = np.interp(test_SoC, soc_values, impedances)
+print(f"Interpolated resistance at {test_SoC}% SOC: {resistance:.4f} Ohms")
