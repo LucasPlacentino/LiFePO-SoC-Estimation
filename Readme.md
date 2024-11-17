@@ -76,7 +76,7 @@ Root Mean Square Error (RMSE): 0.0624526869097305 %
 ## Improvements
 
 ### Fixes:
-- **Algorithm**: there's some issue with the algorithm that needs to be fixed during the next phase in order to get a lower error.  
+- **Algorithm**: We use the initial state of charge directly due to some issues with interpolation, so we need to determine it using the HPPC files.  
 - **Battery Caracteristics**: the battery characteristics are defined as constants as it was considered as a sufficient simplification. It would be interesting to consider them as variables.
 
 ### Enhancements:
