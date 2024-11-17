@@ -91,15 +91,15 @@ print(data.head()) # view the first few lines of the dataframe to manually verif
 time_read = timeit.default_timer()
 print(f"Time to read data: {time_read - start} s")
 
-# Extraction des colonnes par index
+# Extracting columns by index
 voltage_data = data['voltage'].values
 current_data = data['current_inv'].values
 soc_true_data = data['SOC_true'].values
 temperature_data = data['temperature'].values
 
-# Paramètres de la batterie
-nominal_capacity = 280.0  # Capacité nominale en Ah (ajuster en fonction de la batterie)
-dt = 1.0  # Pas de temps en secondes
+# Battery parameters
+nominal_capacity = 280.0  # Nominal capacity in Ah (adjust based on the battery)
+dt = 1.0  # Time step in seconds
 initial_voltage = voltage_data[0]
 print(f"Initial voltage: {initial_voltage}")
 
@@ -146,7 +146,7 @@ OffSet = 0
 factor = -36.12201 # -30.82 # -35.341 # -36.12201
 
 
-# Modèle de tension utilisant les courbes de charge et décharge
+# Voltage model using charge and discharge curves
 def voltage_model(SOC, current, temperature=None, mode="discharge"): # temp not used YET
     if mode == "charge":
         soc_ocv = data_ocv_charge["data_SOC"].values
@@ -162,12 +162,10 @@ def voltage_model(SOC, current, temperature=None, mode="discharge"): # temp not 
         # todo: use hppc test data to get R_int for current SoC
         # constant R value is sufficiently accurate for now
 
-    # Mise à l'échelle de SOC si nécessaire
-    SOC_scaled = SOC  # Si les courbes utilisent une échelle de 0 à 1
-    V_oc = np.interp(SOC_scaled, soc_ocv, voltage_ocv)
+    V_oc = np.interp(SOC, soc_ocv, voltage_ocv)
     return V_oc - current * R_int
 
-# Jacobienne de la transition d'état (approximation pour le SoC)
+# Jacobian of state transition (approximation for SoC)
 def jacobian_state_transition():
     return np.array([[1]])
 
@@ -178,7 +176,7 @@ def jacobian_state_transition():
 #    jacobian = np.array([[1 - (current * dt / nominal_capacity)]])
 #    return jacobian
 
-# Jacobienne de la mesure
+# Jacobian of the measurement function
 #def jacobian_measurement_function(*args, **kwargs):
 #    return np.array([[1]])
 
@@ -191,10 +189,10 @@ def jacobian_measurement_function(SoC, current, delta=1e-5):
     dV_dSoC = (V_plus - V_minus) / (2 * delta)
     return np.array([[dV_dSoC]])
 
-# Initialisation pour le calcul de l'erreur maximale
+# Initialization for maximum error calculation
 max_ae = 0
 
-# Boucle de simulation
+# Simulation loop
 num_steps = len(voltage_data)
 print(f"Total nb of steps : {num_steps}")
 SoC_values = []
@@ -206,29 +204,26 @@ for t in range(num_steps):
     measured_voltage = voltage_data[t]
     temperature = temperature_data[t]
 
-    # Prédiction
+    # Prediction
     SoC_pred = SoC_est - np.array([[current * dt / nominal_capacity]])
     F = jacobian_state_transition()
     P_pred = F @ P @ F.T + Q
 
-    # Tension prédite (choix entre charge/décharge selon le courant)
+    # Predicted voltage (choose charge/discharge mode based on current)
     mode = "charge" if current > 0 else "discharge"
     voltage_pred = voltage_model(SoC_pred[0, 0], current, mode=mode)
 
-    # Mise à jour (filtrage)
+    # Update (filtering)
     H = jacobian_measurement_function(SoC_pred[0, 0], current)
     K = P_pred @ H.T @ np.linalg.inv(H @ P_pred @ H.T + R + 1e-9 * np.eye(H.shape[0]))
     innovation = measured_voltage - voltage_pred
     SoC_est = SoC_pred + K @ np.array([[measured_voltage - voltage_pred]])
     P = (np.eye(len(P)) - K @ H) @ P_pred
 
-    # Diviser SoC_est par 100 avant de stocker et calculer l'erreur
-    #SoC_est /= 1.4
-
-    # Stocker la valeur estimée de SoC
+    # Store the estimated SoC value
     SoC_values.append(SoC_est[0, 0])
 
-    # Calcul de l'erreur absolue maximale
+    # Calculate maximum absolute error
     actual_soc = soc_true_data[t]
 
     errors.append(actual_soc - SoC_est[0, 0])
@@ -239,13 +234,13 @@ for t in range(num_steps):
 
 
 
-# Affichage des résultats
+# Displaying results
 
 print('max soc estim', max(SoC_values))
 print('max vrai soc', max(soc_true_data))
 
 
-# Affichage de l'erreur maximale
+# Display maximum error
 print(f"Maximum Absolute Error (MaxAE) : {max_ae} %")
 
 SoC_values = np.array(SoC_values) #+ OffSet
