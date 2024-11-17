@@ -69,13 +69,13 @@ Root Mean Square Error (RMSE): 0.0624526869097305 %
 ## Improvements
 
 ### Fixes:
-- **Algorithm**: We use the initial state of charge directly due to some issues with interpolation, so we need to determine it using the HPPC files.  
+- **Algorithm**: We use the initial state of charge directly due to some issues with interpolation of the data in the HPPC files.  
 - **Battery Caracteristics**: the battery characteristics are defined as constants as it was considered as a sufficient simplification. It would be interesting to consider them as variables.
 
 ### Enhancements:
 - **Modeling**: Implement a more accurate battery model to improve the estimation accuracy.  
 - **Optimization**: Optimize the EKF algorithm to reduce the computational complexity and improve real-time performance.  
-- **Validation**: Validate the algorithm on a wider range of scenarios and battery types to ensure robustness and generalization.  
+- **Validation**: Validate the algorithm on a wider range of scenarios.  
 
 
 ## Acknowledgments
