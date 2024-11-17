@@ -57,12 +57,14 @@ Papers:
 > - El Maliki, A., Benlafkih, A., Anoune, K., & Hadjoudja, A. (2024). Reduce state of charge estimation errors with an extended Kalman filter algorithm. International Journal of Electrical and Computer Engineering (IJECE), 14(1), 57-65. doi:http://doi.org/10.11591/ijece.v14i1.pp57-65  
 
 
-## Results
+## Example Results
 
 Maximum Absolute Error (MaxAE) : 0.10682889559265618 %  
 Root Mean Square Error (RMSE): 0.0624526869097305 %
 
-<img width="641" alt="Capture d’écran 2024-11-17 à 22 57 52" src="https://github.com/user-attachments/assets/6962e9aa-88f8-43b8-ac79-aa60f8d95366">
+<img width="641" alt="Capture d’écran 2024-11-17 à 22 57 52" src="https://github.com/user-attachments/assets/d61d3c4b-38e2-4d00-a6f5-8014063e5668">
+
+> It is difficult to see both colored lines as they are really close to each other
 
 ## Improvements
 
