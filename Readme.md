@@ -68,7 +68,7 @@ Papers:
 
 ## Results
 
-Maximum Absolute Error (MaxAE) : 0.10682889559265618 %
+Maximum Absolute Error (MaxAE) : 0.10682889559265618 %  
 Root Mean Square Error (RMSE): 0.0624526869097305 %
 
 <img width="641" alt="Capture d’écran 2024-11-17 à 22 57 52" src="https://github.com/user-attachments/assets/6962e9aa-88f8-43b8-ac79-aa60f8d95366">
