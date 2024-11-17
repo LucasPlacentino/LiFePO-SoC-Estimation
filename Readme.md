@@ -38,6 +38,7 @@ Time to read data: [...] s
 Initial voltage: [...]
 Initial SoC: [...], true initial SoC: [...]
 Total nb of steps : [...]
+
     [...etc...]
 ```
 
