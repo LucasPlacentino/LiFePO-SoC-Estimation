@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import timeit
-import statistics
-import csv
+#import statistics
+#import csv
 
 start = timeit.default_timer()
 
@@ -14,8 +14,8 @@ start = timeit.default_timer()
 # entire dataset in memory, where real-world applications would read data continuously from a sensor processing
 # it in real-time)
 
-test_str = "n"
-#test_str = str(input("Run DEBUG? This will use matplotlib to plot data, use with UI! (Y/n) ")).lower()
+
+test_str = str(input("Run DEBUG? This will use matplotlib to plot data, use with UI! (Y/n) ")).lower()
 TEST = True if test_str == "y" else False
 print(f"Running in {"debug mode" if TEST else "prod mode"}")
 
@@ -253,7 +253,7 @@ print('Time: ', stop - time_read, 's')
 if TEST:
     print('max soc estim', max(SoC_values))
     print('max soc true ', max(soc_true_data))
-
+    
     plt.plot(range(num_steps), SoC_values, label="SoC Estimation")
     plt.plot(range(num_steps), soc_true_data, label="Real SoC")
     # make the y axis of the plot go from 0 to 100:

@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import timeit
-import statistics
-import csv
+#import statistics
+#import csv
 
 start = timeit.default_timer()
 
